@@ -32,6 +32,7 @@ dist-alloy-binaries: dist/alloy-linux-amd64                    \
                      dist/alloy-linux-arm64                    \
                      dist/alloy-linux-ppc64le                  \
                      dist/alloy-linux-s390x                    \
+                     dist/alloy-linux-riscv64                  \
                      dist/alloy-darwin-amd64                   \
                      dist/alloy-darwin-arm64                   \
                      dist/alloy-windows-amd64.exe              \
@@ -60,6 +61,14 @@ dist/alloy-linux-s390x: GOOS    := linux
 dist/alloy-linux-s390x: GOARCH  := s390x
 dist/alloy-linux-s390x: generate-ui
 	$(PACKAGING_VARS) ALLOY_BINARY=$@ "$(MAKE)" -f $(PARENT_MAKEFILE) alloy
+
+# NOTE: viceroy v0.4.0 doesn't know about riscv64, so we bypass viceroycc by
+# pinning CC to the riscv64 cross compiler installed in the build image.
+dist/alloy-linux-riscv64: GO_TAGS += netgo embedalloyui promtail_journal_enabled
+dist/alloy-linux-riscv64: GOOS    := linux
+dist/alloy-linux-riscv64: GOARCH  := riscv64
+dist/alloy-linux-riscv64: generate-ui
+	$(PACKAGING_VARS) CC=riscv64-linux-gnu-gcc ALLOY_BINARY=$@ "$(MAKE)" -f $(PARENT_MAKEFILE) alloy
 
 dist/alloy-darwin-amd64: GO_TAGS += netgo embedalloyui
 dist/alloy-darwin-amd64: GOOS    := darwin
@@ -172,7 +181,8 @@ ALLOY_PACKAGE_PREFIX  := dist/alloy-$(ALLOY_PACKAGE_VERSION)-$(ALLOY_PACKAGE_REL
 dist-alloy-packages: dist-alloy-packages-amd64   \
                      dist-alloy-packages-arm64   \
                      dist-alloy-packages-ppc64le \
-                     dist-alloy-packages-s390x
+                     dist-alloy-packages-s390x   \
+                     dist-alloy-packages-riscv64
 
 .PHONY: dist-alloy-packages-amd64
 dist-alloy-packages-amd64: dist/alloy-linux-amd64
@@ -208,6 +218,15 @@ ifeq ($(USE_CONTAINER),1)
 else
 	$(call generate_alloy_fpm,deb,s390x,s390x,$(ALLOY_PACKAGE_PREFIX).s390x.deb)
 	$(call generate_alloy_fpm,rpm,s390x,s390x,$(ALLOY_PACKAGE_PREFIX).s390x.rpm)
+endif
+
+.PHONY: dist-alloy-packages-riscv64
+dist-alloy-packages-riscv64: dist/alloy-linux-riscv64
+ifeq ($(USE_CONTAINER),1)
+	$(RERUN_IN_CONTAINER)
+else
+	$(call generate_alloy_fpm,deb,riscv64,riscv64,$(ALLOY_PACKAGE_PREFIX).riscv64.deb)
+	$(call generate_alloy_fpm,rpm,riscv64,riscv64,$(ALLOY_PACKAGE_PREFIX).riscv64.rpm)
 endif
 
 #

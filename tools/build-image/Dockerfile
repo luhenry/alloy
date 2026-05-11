@@ -55,14 +55,15 @@ RUN go install sigs.k8s.io/controller-tools/cmd/controller-gen@$CONTROLLER_GEN_V
 
 # rfratto/viceroy contains C cross compilers can be used for our Cgo
 # dependencies.
-FROM rfratto/viceroy:v0.4.0@sha256:7e3f328889b5b0c5c0303dda5e74a89189e6e437d33f609dde98f9a84337e0a2
+FROM ghcr.io/luhenry/viceroy:v0.5.0
 
-# Fix apt sources - restrict main bullseye to supported architectures
-RUN rm -f /etc/apt/sources.list \
+# Fix apt sources - restrict main to supported architectures
+RUN . /etc/os-release \
+ && rm -f /etc/apt/sources.list \
  && rm -rf /etc/apt/sources.list.d/* \
- && echo "deb [arch=amd64,arm64,armhf,i386] https://ftp.debian.org/debian bullseye main" > /etc/apt/sources.list \
- && echo "deb https://ftp.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list \
- && echo "deb https://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+ && echo "deb [arch=amd64,arm64,armhf,i386] https://ftp.debian.org/debian ${VERSION_CODENAME} main" > /etc/apt/sources.list \
+ && echo "deb https://ftp.debian.org/debian ${VERSION_CODENAME}-updates main" >> /etc/apt/sources.list \
+ && echo "deb https://security.debian.org/debian-security ${VERSION_CODENAME}-security main" >> /etc/apt/sources.list
 
 # Install other dependencies.
 #
